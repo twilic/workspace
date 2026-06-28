@@ -1,8 +1,6 @@
 # Workspace
 
-Generate a VS Code workspace by cloning all repositories from the Twilic GitHub organization.
-
-[twilic/workspace](https://github.com/twilic/workspace) clones all repositories under the [Twilic](https://github.com/twilic) GitHub organization and automatically generates a VS Code multi-root workspace file (`twilic.code-workspace`).
+Clone all repositories from the [Twilic](https://github.com/twilic) GitHub organization and generate a VS Code multi-root workspace file (`twilic.code-workspace`) in one step.
 
 ## Overview
 
