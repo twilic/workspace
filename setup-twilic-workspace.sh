@@ -40,12 +40,20 @@ printf 'workspace file:   %s\n' "$WORKSPACE_FILE"
 printf '\n'
 
 TMP_REPOS=$(mktemp 2>/dev/null || mktemp -t twilic-repos)
+TMP_FOR_TWILIC=$(mktemp 2>/dev/null || mktemp -t twilic-for-twilic)
 
 if ! gh repo list "$ORG" \
   --limit "$LIMIT" \
   --json name \
   --jq '.[].name' >"$TMP_REPOS"; then
   die "failed to list repositories for organization '${ORG}'"
+fi
+
+if ! gh repo list "$ORG" \
+  --limit "$LIMIT" \
+  --json name,description \
+  --jq '.[] | select(.description != null and (.description | test("for Twilic"; "i"))) | .name' >"$TMP_FOR_TWILIC"; then
+  die "failed to list repository descriptions for organization '${ORG}'"
 fi
 
 if [ ! -s "$TMP_REPOS" ]; then
@@ -58,7 +66,7 @@ UPDATED_COUNT=0
 FAILED_COUNT=0
 
 TMP_CLONED=$(mktemp 2>/dev/null || mktemp -t twilic-cloned)
-trap 'rm -f "$TMP_REPOS" "$TMP_CLONED"' EXIT INT TERM
+trap 'rm -f "$TMP_REPOS" "$TMP_FOR_TWILIC" "$TMP_CLONED"' EXIT INT TERM
 : >"$TMP_CLONED"
 
 while IFS= read -r repo || [ -n "$repo" ]; do
@@ -97,6 +105,24 @@ if [ ! -s "$TMP_CLONED" ]; then
   die "no repositories were cloned or updated successfully"
 fi
 
+TMP_SORTED=$(mktemp 2>/dev/null || mktemp -t twilic-sorted)
+trap 'rm -f "$TMP_REPOS" "$TMP_FOR_TWILIC" "$TMP_CLONED" "$TMP_SORTED"' EXIT INT TERM
+
+# Sort folders: other repos, then for-Twilic wrappers, then twilic, then twilic-* (alphabetically within each group).
+while IFS= read -r repo || [ -n "$repo" ]; do
+  [ -n "$repo" ] || continue
+  if grep -qxF "$repo" "$TMP_FOR_TWILIC" 2>/dev/null; then
+    sort_key=1
+  else
+    case "$repo" in
+      twilic) sort_key=2 ;;
+      twilic-*) sort_key=3 ;;
+      *) sort_key=0 ;;
+    esac
+  fi
+  printf '%s\t%s\n' "$sort_key" "$repo"
+done <"$TMP_CLONED" | LC_ALL=C sort -t "$(printf '\t')" -k1,1n -k2,2 | cut -f2- >"$TMP_SORTED"
+
 {
   printf '{\n'
   printf '  "folders": [\n'
@@ -111,8 +137,14 @@ fi
     fi
     # Escape backslashes and double quotes for JSON string values.
     escaped_repo=$(printf '%s' "$repo" | sed 's/\\/\\\\/g; s/"/\\"/g')
-    printf '    { "path": "./%s" }' "$escaped_repo"
-  done <"$TMP_CLONED"
+    if grep -qxF "$repo" "$TMP_FOR_TWILIC" 2>/dev/null; then
+      display_name="@${ORG}/${repo}"
+      escaped_name=$(printf '%s' "$display_name" | sed 's/\\/\\\\/g; s/"/\\"/g')
+      printf '    { "name": "%s", "path": "./%s" }' "$escaped_name" "$escaped_repo"
+    else
+      printf '    { "path": "./%s" }' "$escaped_repo"
+    fi
+  done <"$TMP_SORTED"
 
   printf '\n  ],\n'
   printf '  "settings": {}\n'
