@@ -147,3 +147,7 @@ Grant execute permission and run the script again:
 ```sh
 chmod +x setup-twilic-workspace.sh
 ```
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
