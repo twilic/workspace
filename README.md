@@ -123,7 +123,7 @@ Organization repositories are cloned as siblings of this repository (one directo
 3. For each repository:
    - If already cloned (`<repos-dir>/<repo>/.git` exists), updates it with `git pull`
    - Otherwise, clones it with `gh repo clone twilic/<repo>`
-4. Generates `twilic.code-workspace` with sorted folders and `@twilic/*` display names for framework integration repositories
+4. Generates `twilic.code-workspace` with sorted folders and `@twilic/*` display names for the CLI and framework integration repositories
 
 When finished, the script prints the number of repositories found, cloned, updated, and failed.
 

@@ -109,7 +109,7 @@ fi
 if ! gh repo list "$ORG" \
   --limit "$LIMIT" \
   --json name,description \
-  --jq '.[] | select(.description != null and (.description | test("for Twilic"; "i"))) | .name' >"$TMP_FOR_TWILIC"; then
+  --jq '.[] | select((.description != null and (.description | test("for Twilic"; "i"))) or .name == "cli") | .name' >"$TMP_FOR_TWILIC"; then
   die "failed to list repository descriptions for organization '${ORG}'"
 fi
 
