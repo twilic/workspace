@@ -1,0 +1,9 @@
+services:
+  workspace:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      # Mount the parent directory so organization repositories can live as siblings of this repo.
+      - ../..:/workspaces:cached
+    command: sleep infinity

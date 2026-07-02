@@ -2,135 +2,181 @@
 
 Clone all repositories from the [Twilic](https://github.com/twilic) GitHub organization and generate a VS Code multi-root workspace file (`twilic.code-workspace`) in one step.
 
+This repository provides a [Dev Container](https://containers.dev/) for a reproducible development environment with language toolchains used across the Twilic organization.
+
+## Included tools
+
+The Dev Container installs the following runtimes and build tools:
+
+| Tool        | Version | Used by                                                 |
+| ----------- | ------- | ------------------------------------------------------- |
+| Node.js     | 24      | `twilic-js`, `cli`, `@twilic/*`, `website`, `benchmark` |
+| pnpm        | latest  | Node.js packages                                        |
+| Python      | 3.12    | `twilic-python`                                         |
+| Rust        | stable  | `twilic-rust`, conformance fixtures                     |
+| Zig         | 0.15.2  | `twilic-zig`                                            |
+| Go          | 1.22    | `twilic-go`                                             |
+| Java (JDK)  | 21      | `twilic-java`, `twilic-kotlin`, `twilic-scala`          |
+| Ruby        | 3.3     | `twilic-ruby`                                           |
+| .NET SDK    | 8.0     | `twilic-csharp`                                         |
+| PHP         | 8.3     | `twilic-php`                                            |
+| GCC / Clang | latest  | `twilic-c`, `twilic-cpp`                                |
+| Elixir      | distro  | `twilic-elixir`                                         |
+| Lua         | 5.4     | `twilic-lua`                                            |
+| R           | distro  | `twilic-r`                                              |
+| git / gh    | latest  | repository setup                                        |
+
+VS Code extensions for EditorConfig, Rust, Python, Go, Java, Ruby, Zig, and ESLint are preinstalled.
+
 ## Overview
 
-Twilic development spans many repositories: the specification, language implementations, web framework integrations, CLI tools, benchmarks, and more. Running `setup-twilic-workspace.sh` in this repository lets you do the following in one step:
+Twilic development spans many repositories: the specification, language implementations, web framework integrations, CLI tools, benchmarks, and more. Opening this repository in a Dev Container and running `scripts/setup-twilic-workspace.sh` lets you do the following in one step:
 
 - List all repositories in the `twilic` organization
-- Clone them into the current directory (or run `git pull` if already cloned)
+- Clone them next to this repository (or run `git pull` if already cloned)
 - Generate `twilic.code-workspace`
 
-Private repositories (including this `workspace` repository) are supported. Cloning uses authentication from the [GitHub CLI (`gh`)](https://cli.github.com/).
+Private repositories (including this `workspace` repository) are supported. Cloning uses authentication from `gh`.
 
 ## Prerequisites
 
-The following tools must be installed and available:
+| Tool                                                                       | Purpose                                           |
+| -------------------------------------------------------------------------- | ------------------------------------------------- |
+| [Docker](https://www.docker.com/)                                          | Run the Dev Container                             |
+| [VS Code](https://code.visualstudio.com/) or [Cursor](https://cursor.com/) | Editor with Dev Containers support                |
+| Dev Containers extension                                                   | **Dev Containers** (VS Code) or built-in (Cursor) |
+| [gh](https://cli.github.com/) on the host                                  | Authenticate before opening the container         |
 
-| Tool                          | Purpose                                         |
-| ----------------------------- | ----------------------------------------------- |
-| [git](https://git-scm.com/)   | Clone and update repositories                   |
-| [gh](https://cli.github.com/) | List repositories and clone with authentication |
+`gh` must be authenticated on the host with a GitHub account that has access to private repositories in the `twilic` organization. The Dev Container reuses your host `~/.config/gh` credentials.
 
-`gh` must be authenticated with a GitHub account that has access to private repositories in the `twilic` organization.
+## Quick start
 
-## Setup
-
-### 1. Authenticate GitHub CLI
-
-If you are not authenticated yet, log in with `gh` first:
+### 1. Authenticate GitHub CLI on the host
 
 ```sh
 gh auth login
-```
-
-You can verify your authentication status with:
-
-```sh
 gh auth status
 ```
 
-### 2. Prepare a working directory
+### 2. Clone this repository
 
-Create and move into the directory where you want to clone repositories. The script places each repository in **the current working directory** where it is executed.
+Clone into a directory whose parent will hold the other organization repositories:
 
 ```sh
 mkdir -p ~/workspace/twilic
-cd ~/workspace/twilic
+gh repo clone twilic/workspace ~/workspace/twilic/workspace
 ```
 
-### 3. Clone this repository
+After setup, repositories are laid out like this on the host:
+
+```text
+~/workspace/twilic/
+├── workspace/           # this repository
+├── twilic/              # specification
+├── twilic-js/
+└── ...
+```
+
+### 3. Open in a Dev Container
+
+Open `~/workspace/twilic/workspace` in VS Code or Cursor, then choose **Reopen in Container**.
+
+### 4. Run the setup script
+
+Inside the container:
 
 ```sh
-gh repo clone twilic/workspace .
+./scripts/setup-twilic-workspace.sh
 ```
 
-If you have already cloned it, update to the latest version:
-
-```sh
-git pull
-```
-
-## Usage
-
-Run the following from your working directory:
-
-```sh
-./setup-twilic-workspace.sh
-```
-
-When the script finishes, each repository will be present in the same directory and `twilic.code-workspace` will be generated.
-
-### Open in VS Code
+When the script finishes, open the generated workspace file:
 
 ```sh
 code twilic.code-workspace
 ```
 
-You can also use **File > Open Workspace from File...** in VS Code and select `twilic.code-workspace`.
+You can also use **File > Open Workspace from File...** and select `twilic.code-workspace`.
+
+## Repository layout
+
+```text
+twilic/workspace
+├── .devcontainer/
+│   ├── devcontainer.json
+│   ├── Dockerfile
+│   └── docker-compose.yml
+├── scripts/
+│   └── setup-twilic-workspace.sh
+├── twilic.code-workspace    # generated (gitignored)
+├── README.md
+└── LICENSE
+```
+
+Organization repositories are cloned as siblings of this repository (one directory above `workspace/` on the host).
 
 ## What the script does
 
-`setup-twilic-workspace.sh` performs the following steps:
+`scripts/setup-twilic-workspace.sh` performs the following steps:
 
 1. Verifies that `git` and `gh` are installed and that `gh` is authenticated
 2. Fetches repository names with `gh repo list twilic`
 3. For each repository:
-   - If already cloned (`./<repo>/.git` exists), updates it with `git pull`
+   - If already cloned (`<repos-dir>/<repo>/.git` exists), updates it with `git pull`
    - Otherwise, clones it with `gh repo clone twilic/<repo>`
-4. Generates `twilic.code-workspace` from successfully cloned or updated repositories
+4. Generates `twilic.code-workspace` with sorted folders and `@twilic/*` display names for framework integration repositories
 
 When finished, the script prints the number of repositories found, cloned, updated, and failed.
 
 ## Re-running the script
 
-Running the script again in the same directory updates existing repositories and clones only newly added ones. `twilic.code-workspace` is regenerated from the current repository list.
+Running the script again updates existing repositories and clones only newly added ones. `twilic.code-workspace` is regenerated from the current repository list.
 
 ## Environment variables
 
-| Variable     | Default | Description                                                |
-| ------------ | ------- | ---------------------------------------------------------- |
-| `REPO_LIMIT` | `1000`  | Maximum number of repositories to fetch via `gh repo list` |
+| Variable                | Default (Dev Container) | Description                                                |
+| ----------------------- | ----------------------- | ---------------------------------------------------------- |
+| `TWILIC_REPOS_DIR`      | `/workspaces`           | Directory to clone organization repositories into          |
+| `TWILIC_WORKSPACE_ROOT` | `/workspaces/workspace` | Directory where `twilic.code-workspace` is written         |
+| `REPO_LIMIT`            | `1000`                  | Maximum number of repositories to fetch via `gh repo list` |
+
+In the Dev Container, repositories are cloned to `/workspaces` (siblings of `/workspaces/workspace`). When running locally without these variables, both default to the repository root.
 
 Example:
 
 ```sh
-REPO_LIMIT=500 ./setup-twilic-workspace.sh
+REPO_LIMIT=500 ./scripts/setup-twilic-workspace.sh
 ```
 
-## Directory layout (after running)
+## Local usage (without Dev Container)
 
-After the script completes, the current directory will look roughly like this:
+You can run the setup script on the host if `git` and `gh` are installed:
 
-```text
-.
-├── setup-twilic-workspace.sh
-├── README.md
-├── twilic.code-workspace
-├── twilic/              # Specification
-├── website/             # Official website
-├── cli/                 # CLI tool
-└── ...                  # Other organization repositories
+```sh
+gh auth login
+./scripts/setup-twilic-workspace.sh
+```
+
+By default, repositories are cloned into this repository's root directory. To match the Dev Container layout on the host:
+
+```sh
+export TWILIC_REPOS_DIR="$(cd .. && pwd)"
+export TWILIC_WORKSPACE_ROOT="$(pwd)"
+./scripts/setup-twilic-workspace.sh
 ```
 
 ## Troubleshooting
 
 ### `gh is not authenticated`
 
-Run `gh auth login`, then execute the script again.
+Run `gh auth login` on the host, then rebuild or reopen the Dev Container so credentials are available inside the container.
 
 ### `cannot access organization 'twilic'`
 
 Make sure your GitHub account is a member of the `twilic` organization or has the required access permissions.
+
+### Dev Container fails to start
+
+Confirm Docker is running and the Dev Containers extension is installed. Rebuild the container with **Dev Containers: Rebuild Container**.
 
 ### A specific repository fails to clone
 
@@ -140,12 +186,12 @@ This may be caused by insufficient permissions or a network issue. The script co
 gh repo clone twilic/<repository-name>
 ```
 
-### `./setup-twilic-workspace.sh: Permission denied`
+### `./scripts/setup-twilic-workspace.sh: Permission denied`
 
 Grant execute permission and run the script again:
 
 ```sh
-chmod +x setup-twilic-workspace.sh
+chmod +x scripts/setup-twilic-workspace.sh
 ```
 
 ## License

@@ -1,0 +1,67 @@
+{
+	"name": "Twilic Workspace",
+	"dockerComposeFile": "docker-compose.yml",
+	"service": "workspace",
+	"workspaceFolder": "/workspaces/workspace",
+	"features": {
+		"ghcr.io/devcontainers/features/common-utils:2": {
+			"upgradePackages": true
+		},
+		"ghcr.io/devcontainers/features/node:1": {
+			"version": "24",
+			"pnpmVersion": "latest",
+			"nodeGypDependencies": true
+		},
+		"ghcr.io/devcontainers/features/python:1": {
+			"version": "3.12",
+			"installTools": true
+		},
+		"ghcr.io/devcontainers/features/rust:1": {
+			"version": "latest",
+			"profile": "default"
+		},
+		"ghcr.io/devcontainers/features/go:1": {
+			"version": "1.22"
+		},
+		"ghcr.io/devcontainers/features/java:1": {
+			"version": "21",
+			"jdkDistro": "ms"
+		},
+		"ghcr.io/devcontainers/features/ruby:1": {
+			"version": "3.3"
+		},
+		"ghcr.io/devcontainers/features/dotnet:2": {
+			"version": "8.0"
+		},
+		"ghcr.io/devcontainers/features/php:1": {
+			"version": "8.3"
+		},
+		"ghcr.io/devcontainers/features/cpp:1": {
+			"version": "latest"
+		},
+		"ghcr.io/devcontainers/features/github-cli:1": {}
+	},
+	"containerEnv": {
+		"TWILIC_REPOS_DIR": "/workspaces",
+		"TWILIC_WORKSPACE_ROOT": "/workspaces/workspace"
+	},
+	"mounts": [
+		"source=${localEnv:HOME}/.config/gh,target=/home/vscode/.config/gh,type=bind,consistency=cached"
+	],
+	"postCreateCommand": "chmod +x scripts/setup-twilic-workspace.sh",
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"dbaeumer.vscode-eslint",
+				"editorconfig.editorconfig",
+				"golang.go",
+				"ms-python.python",
+				"ms-python.vscode-pylance",
+				"redhat.java",
+				"rebornix.ruby",
+				"rust-lang.rust-analyzer",
+				"ziglang.vscode-zig"
+			]
+		}
+	}
+}

@@ -5,14 +5,24 @@
 # Requirements: git, gh (GitHub CLI, authenticated)
 #
 # Usage:
-#   ./setup-twilic-workspace.sh
+#   ./scripts/setup-twilic-workspace.sh
+#
+# Environment variables:
+#   TWILIC_WORKSPACE_ROOT  Directory for twilic.code-workspace (default: repository root)
+#   TWILIC_REPOS_DIR       Directory to clone repositories into (default: TWILIC_WORKSPACE_ROOT)
+#   REPO_LIMIT             Maximum repositories to fetch (default: 1000)
 #
 
 set -eu
 
 ORG=twilic
-WORKSPACE_FILE=twilic.code-workspace
 LIMIT="${REPO_LIMIT:-1000}"
+
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
+TWILIC_WORKSPACE_ROOT="${TWILIC_WORKSPACE_ROOT:-$REPO_ROOT}"
+TWILIC_REPOS_DIR="${TWILIC_REPOS_DIR:-$TWILIC_WORKSPACE_ROOT}"
+WORKSPACE_FILE="${TWILIC_WORKSPACE_ROOT}/twilic.code-workspace"
 
 die() {
   printf 'error: %s\n' "$1" >&2
@@ -21,6 +31,51 @@ die() {
 
 require_cmd() {
   command -v "$1" >/dev/null 2>&1 || die "'$1' is required but not installed."
+}
+
+repo_rel_path() {
+  repo=$1
+  workspace_abs=$(CDPATH= cd -- "$TWILIC_WORKSPACE_ROOT" && pwd)
+  repos_abs=$(CDPATH= cd -- "$TWILIC_REPOS_DIR" && pwd)
+
+  if [ "$workspace_abs" = "$repos_abs" ]; then
+    printf './%s\n' "$repo"
+    return
+  fi
+
+  case "$workspace_abs" in
+    "$repos_abs"/*)
+      remaining=${workspace_abs#"$repos_abs"/}
+      depth=0
+      while [ -n "$remaining" ]; do
+        depth=$((depth + 1))
+        case "$remaining" in
+          */*) remaining=${remaining#*/} ;;
+          *) remaining="" ;;
+        esac
+      done
+      prefix=""
+      while [ "$depth" -gt 0 ]; do
+        prefix="../$prefix"
+        depth=$((depth - 1))
+      done
+      printf '%s%s\n' "$prefix" "$repo"
+      return
+      ;;
+  esac
+
+  if command -v realpath >/dev/null 2>&1; then
+    rel=$(realpath --relative-to="$workspace_abs" "$repos_abs/$repo" 2>/dev/null) || rel=""
+    if [ -n "$rel" ]; then
+      case "$rel" in
+        ./* | ../*) printf '%s\n' "$rel" ;;
+        *) printf './%s\n' "$rel" ;;
+      esac
+      return
+    fi
+  fi
+
+  die "cannot compute relative path from '$TWILIC_WORKSPACE_ROOT' to '$TWILIC_REPOS_DIR/$repo'"
 }
 
 require_cmd git
@@ -34,9 +89,11 @@ if ! gh api "orgs/${ORG}" >/dev/null 2>&1; then
   die "cannot access organization '${ORG}'. Check the org name and your GitHub permissions."
 fi
 
-TARGET_DIR=$(pwd)
-printf 'target directory: %s\n' "$TARGET_DIR"
-printf 'workspace file:   %s\n' "$WORKSPACE_FILE"
+mkdir -p "$TWILIC_REPOS_DIR"
+
+printf 'repos directory:     %s\n' "$TWILIC_REPOS_DIR"
+printf 'workspace root:      %s\n' "$TWILIC_WORKSPACE_ROOT"
+printf 'workspace file:      %s\n' "$WORKSPACE_FILE"
 printf '\n'
 
 TMP_REPOS=$(mktemp 2>/dev/null || mktemp -t twilic-repos)
@@ -73,9 +130,9 @@ while IFS= read -r repo || [ -n "$repo" ]; do
   [ -n "$repo" ] || continue
   REPO_COUNT=$((REPO_COUNT + 1))
 
-  if [ -d "$repo/.git" ]; then
+  if [ -d "$TWILIC_REPOS_DIR/$repo/.git" ]; then
     printf '[update] %s\n' "$repo"
-    if (cd "$repo" && git pull --ff-only 2>/dev/null || git pull); then
+    if (cd "$TWILIC_REPOS_DIR/$repo" && git pull --ff-only 2>/dev/null || git pull); then
       UPDATED_COUNT=$((UPDATED_COUNT + 1))
       printf '%s\n' "$repo" >>"$TMP_CLONED"
     else
@@ -85,14 +142,14 @@ while IFS= read -r repo || [ -n "$repo" ]; do
     continue
   fi
 
-  if [ -e "$repo" ]; then
+  if [ -e "$TWILIC_REPOS_DIR/$repo" ]; then
     FAILED_COUNT=$((FAILED_COUNT + 1))
     printf 'warning: skipping %s (path exists but is not a git repository)\n' "$repo" >&2
     continue
   fi
 
   printf '[clone] %s/%s\n' "$ORG" "$repo"
-  if gh repo clone "${ORG}/${repo}" "$repo"; then
+  if gh repo clone "${ORG}/${repo}" "$TWILIC_REPOS_DIR/$repo"; then
     CLONED_COUNT=$((CLONED_COUNT + 1))
     printf '%s\n' "$repo" >>"$TMP_CLONED"
   else
@@ -135,14 +192,15 @@ done <"$TMP_CLONED" | LC_ALL=C sort -t "$(printf '\t')" -k1,1n -k2,2 | cut -f2- 
     else
       printf ',\n'
     fi
+    repo_path=$(repo_rel_path "$repo")
     # Escape backslashes and double quotes for JSON string values.
-    escaped_repo=$(printf '%s' "$repo" | sed 's/\\/\\\\/g; s/"/\\"/g')
+    escaped_path=$(printf '%s' "$repo_path" | sed 's/\\/\\\\/g; s/"/\\"/g')
     if grep -qxF "$repo" "$TMP_FOR_TWILIC" 2>/dev/null; then
       display_name="@${ORG}/${repo}"
       escaped_name=$(printf '%s' "$display_name" | sed 's/\\/\\\\/g; s/"/\\"/g')
-      printf '    { "name": "%s", "path": "./%s" }' "$escaped_name" "$escaped_repo"
+      printf '    { "name": "%s", "path": "%s" }' "$escaped_name" "$escaped_path"
     else
-      printf '    { "path": "./%s" }' "$escaped_repo"
+      printf '    { "path": "%s" }' "$escaped_path"
     fi
   done <"$TMP_SORTED"
 
