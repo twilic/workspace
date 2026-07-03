@@ -39,7 +39,11 @@
 		"ghcr.io/devcontainers/features/cpp:1": {
 			"version": "latest"
 		},
-		"ghcr.io/devcontainers/features/github-cli:1": {}
+		"ghcr.io/devcontainers/features/github-cli:1": {},
+		"ghcr.io/devcontainers/features/terraform:1": {
+			"version": "1.9.8",
+			"tflint": "latest"
+		}
 	},
 	"containerEnv": {
 		"TWILIC_REPOS_DIR": "/workspaces",
@@ -53,8 +57,10 @@
 		"vscode": {
 			"extensions": [
 				"dbaeumer.vscode-eslint",
+				"davidanson.vscode-markdownlint",
 				"editorconfig.editorconfig",
 				"golang.go",
+				"hashicorp.terraform",
 				"ms-python.python",
 				"ms-python.vscode-pylance",
 				"redhat.java",

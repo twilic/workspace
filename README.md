@@ -26,7 +26,7 @@ The Dev Container installs the following runtimes and build tools:
 | R           | distro  | `twilic-r`                                              |
 | git / gh    | latest  | repository setup                                        |
 
-VS Code extensions for EditorConfig, Rust, Python, Go, Java, Ruby, Zig, and ESLint are preinstalled.
+VS Code extensions for EditorConfig, Rust, Python, Go, Java, Ruby, Zig, ESLint, Terraform, and Markdownlint are preinstalled.
 
 ## Overview
 
