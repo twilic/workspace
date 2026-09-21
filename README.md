@@ -8,29 +8,31 @@ This repository provides a [Dev Container](https://containers.dev/) for a reprod
 
 The Dev Container installs the following runtimes and build tools:
 
-| Tool        | Version | Used by                                                 |
-| ----------- | ------- | ------------------------------------------------------- |
-| Node.js     | 24      | `twilic-js`, `cli`, `@twilic/*`, `website`, `benchmark` |
-| pnpm        | latest  | Node.js packages                                        |
-| Python      | 3.12    | `twilic-python`                                         |
-| Rust        | stable  | `twilic-rust`, conformance fixtures                     |
-| Zig         | 0.15.2  | `twilic-zig`                                            |
-| Go          | 1.22    | `twilic-go`                                             |
-| Java (JDK)  | 21      | `twilic-java`, `twilic-kotlin`, `twilic-scala`          |
-| Ruby        | 3.3     | `twilic-ruby`                                           |
-| .NET SDK    | 8.0     | `twilic-csharp`                                         |
-| PHP         | 8.3     | `twilic-php`                                            |
-| GCC / Clang | latest  | `twilic-c`, `twilic-cpp`                                |
-| Elixir      | distro  | `twilic-elixir`                                         |
-| Lua         | 5.4     | `twilic-lua`                                            |
-| R           | distro  | `twilic-r`                                              |
-| git / gh    | latest  | repository setup                                        |
+| Tool        | Version | Used by                                                                      |
+| ----------- | ------- | ---------------------------------------------------------------------------- |
+| Node.js     | 24      | `twilic` (`runtimes/javascript`), `cli`, `@twilic/*`, `website`, `benchmark` |
+| pnpm        | latest  | Node.js packages                                                             |
+| Python      | 3.12    | `twilic` (`runtimes/python`)                                                 |
+| Rust        | stable  | `twilic` (`runtimes/rust`), conformance fixtures                             |
+| Zig         | 0.15.2  | `twilic` (`runtimes/zig`)                                                    |
+| Go          | 1.22    | `twilic` (`runtimes/go`)                                                     |
+| Java (JDK)  | 21      | `twilic` (`runtimes/java`, `kotlin`, `scala`)                                |
+| Ruby        | 3.3     | `twilic` (`runtimes/ruby`)                                                   |
+| .NET SDK    | 8.0     | `twilic` (`runtimes/csharp`)                                                 |
+| PHP         | 8.3     | `twilic` (`runtimes/php`)                                                    |
+| GCC / Clang | latest  | `twilic` (`runtimes/c`, `cpp`)                                               |
+| Elixir      | distro  | `twilic` (`runtimes/elixir`)                                                 |
+| Lua         | 5.4     | `twilic` (`runtimes/lua`)                                                    |
+| R           | distro  | `twilic` (`runtimes/r`)                                                      |
+| git / gh    | latest  | repository setup                                                             |
 
 VS Code extensions for EditorConfig, Rust, Python, Go, Java, Ruby, Zig, ESLint, Terraform, and Markdownlint are preinstalled.
 
 ## Overview
 
-Twilic development spans many repositories: the specification, language implementations, web framework integrations, CLI tools, benchmarks, and more. Opening this repository in a Dev Container and running `scripts/setup-twilic-workspace.sh` lets you do the following in one step:
+The protocol specification, conformance fixtures, and language SDKs live in the [`twilic/twilic`](https://github.com/twilic/twilic) monorepo under `runtimes/`. Product and integration work stays in separate repositories (website, playground, CLI, web framework integrations, benchmarks, and more).
+
+Opening this repository in a Dev Container and running `scripts/setup-twilic-workspace.sh` lets you do the following in one step:
 
 - List all repositories in the `twilic` organization
 - Clone them next to this repository (or run `git pull` if already cloned)
@@ -72,8 +74,9 @@ After setup, repositories are laid out like this on the host:
 ```text
 ~/workspace/twilic/
 ├── workspace/           # this repository
-├── twilic/              # specification
-├── twilic-js/
+├── twilic/              # protocol monorepo (spec, conformance, runtimes/*)
+├── cli/
+├── website/
 └── ...
 ```
 
