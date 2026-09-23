@@ -11,7 +11,7 @@ The Dev Container installs the following runtimes and build tools:
 | Tool        | Version | Used by                                                                      |
 | ----------- | ------- | ---------------------------------------------------------------------------- |
 | Node.js     | 24      | `twilic` (`runtimes/javascript`), `cli`, `@twilic/*`, `website`, `benchmark` |
-| pnpm        | latest  | Node.js packages                                                             |
+| Bun         | 1.4.2   | Node.js package installs                                                     |
 | Python      | 3.12    | `twilic` (`runtimes/python`)                                                 |
 | Rust        | stable  | `twilic` (`runtimes/rust`), conformance fixtures                             |
 | Zig         | 0.15.2  | `twilic` (`runtimes/zig`)                                                    |
